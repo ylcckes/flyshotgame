@@ -295,6 +295,7 @@ function showKnowledge() {
 }
 
 function continueFromKnowledge() {
+  document.getElementById("knowledgePanel").classList.remove("is-visible");
   if (game.levelIndex >= levels.length - 1) {
     state = "victory";
     showEndPanel("遷徙成功", "小紫完成旅程，也把紫斑蝶的棲地知識帶給了玩家。", "重新開始遊戲", true);
@@ -827,12 +828,7 @@ function drawBullets() {
       ctx.arc(b.x, b.y, b.r * 0.62, 0, Math.PI * 2);
       ctx.stroke();
     } else {
-      ctx.shadowColor = b.color;
-      ctx.shadowBlur = 12;
-      ctx.fillStyle = b.color;
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-      ctx.fill();
+      drawSparkBullet(b);
     }
     ctx.restore();
   }
@@ -842,6 +838,56 @@ function drawBullets() {
     ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
     ctx.fill();
   }
+}
+
+function drawSparkBullet(b) {
+  const time = performance.now() * 0.012 + b.x * 0.03;
+  const pulse = 1 + Math.sin(time) * 0.18;
+  const glow = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r * 3.2);
+  glow.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+  glow.addColorStop(0.25, b.color);
+  glow.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(b.x, b.y, b.r * 3.2 * pulse, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.shadowColor = b.color;
+  ctx.shadowBlur = 22;
+  ctx.fillStyle = "#fffef2";
+  ctx.beginPath();
+  ctx.arc(b.x, b.y, b.r * 0.72, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.86)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(b.x - b.r * 1.8, b.y);
+  ctx.lineTo(b.x + b.r * 1.8, b.y);
+  ctx.moveTo(b.x, b.y - b.r * 1.8);
+  ctx.lineTo(b.x, b.y + b.r * 1.8);
+  ctx.stroke();
+
+  ctx.strokeStyle = b.color;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(b.x - b.r * 1.15, b.y - b.r * 1.15);
+  ctx.lineTo(b.x + b.r * 1.15, b.y + b.r * 1.15);
+  ctx.moveTo(b.x + b.r * 1.15, b.y - b.r * 1.15);
+  ctx.lineTo(b.x - b.r * 1.15, b.y + b.r * 1.15);
+  ctx.stroke();
+
+  if (Math.sin(time * 1.7) > 0.18) {
+    ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+    ctx.beginPath();
+    ctx.arc(b.x - b.r * 1.35, b.y - b.r * 0.9, 2.1, 0, Math.PI * 2);
+    ctx.arc(b.x + b.r * 1.25, b.y + b.r * 0.75, 1.7, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
 }
 
 function drawPickups() {

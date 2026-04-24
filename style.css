@@ -183,6 +183,35 @@ h2 {
   line-height: 1.7;
 }
 
+.creditLine,
+.licenseNote {
+  margin: 10px 0 0;
+  text-align: center;
+}
+
+.creditLine {
+  color: #fff7d6;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.creditLine a {
+  color: #9de8ff;
+  text-decoration: none;
+  border-bottom: 2px solid rgba(157, 232, 255, 0.45);
+}
+
+.creditLine a:hover {
+  color: #ffe66d;
+  border-bottom-color: rgba(255, 230, 109, 0.72);
+}
+
+.licenseNote {
+  color: rgba(255, 250, 247, 0.76);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
 .menuActions {
   display: flex;
   flex-wrap: wrap;
