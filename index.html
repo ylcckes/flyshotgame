@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>紫蝶遷徙大冒險</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main id="gameShell">
+      <canvas id="gameCanvas" width="1280" height="720" aria-label="紫蝶遷徙大冒險遊戲畫面"></canvas>
+
+      <section id="overlay" class="overlay is-visible">
+        <div class="panel">
+          <p class="eyebrow">橫向捲軸射擊遊戲</p>
+          <h1>紫蝶遷徙大冒險</h1>
+          <p class="intro">
+            操控 Q 版紫斑蝶「小紫」穿越幽谷、道路與森林棲地，收集花粉升級武器，擊退遷徙路上的挑戰。
+          </p>
+
+          <div id="leaderboard" class="leaderboard">
+            <h2>得分排行 Top 5</h2>
+            <ol id="leaderboardList"></ol>
+          </div>
+
+          <form id="scoreForm" class="scoreForm" hidden>
+            <label for="playerName">輸入姓名紀錄分數</label>
+            <div class="scoreFields">
+              <input id="playerName" name="playerName" maxlength="12" autocomplete="off" placeholder="你的名字" />
+              <button id="saveScoreButton" type="submit">儲存得分</button>
+            </div>
+          </form>
+
+          <div class="menuActions">
+            <button id="startButton" type="button">開始遊戲</button>
+            <button id="helpButton" type="button">操作方式</button>
+            <button id="musicButton" type="button">音樂：開</button>
+          </div>
+          <div id="helpText" class="helpText" hidden>
+            <p>鍵盤：WASD / 方向鍵移動，空白鍵射擊，J 切換武器，K 施放紫蝶群舞，P 暫停，M 切換音樂。</p>
+            <p>iPad：左下角虛擬搖桿移動，右下角按鈕射擊、換武器與大招。</p>
+            <div class="helpGrid" aria-label="圖示說明">
+              <div class="helpItem">
+                <span class="helpIcon helpHeart"></span>
+                <strong>生命</strong>
+                <span>共有 5 格，歸零後遊戲結束。</span>
+              </div>
+              <div class="helpItem">
+                <span class="helpIcon helpSwarm"></span>
+                <strong>能量</strong>
+                <span>集滿可施放紫蝶群舞大招。</span>
+              </div>
+              <div class="helpItem">
+                <span class="helpIcon helpStar"></span>
+                <strong>花粉</strong>
+                <span>收集後累積分數與武器升級進度。</span>
+              </div>
+              <div class="helpItem">
+                <span class="helpIcon helpCrystal"></span>
+                <strong>晶球</strong>
+                <span>取得後可立即升級目前武器。</span>
+              </div>
+              <div class="helpItem">
+                <span class="helpIcon helpHeart"></span>
+                <strong>補血</strong>
+                <span>打倒敵人有機率掉落，回復 1 格生命。</span>
+              </div>
+              <div class="helpItem">
+                <span class="helpIcon helpWeapon"></span>
+                <strong>花粉光彈</strong>
+                <span>基礎直線攻擊，射速快、容易命中。</span>
+              </div>
+              <div class="helpItem">
+                <span class="helpIcon helpNectar"></span>
+                <strong>蜜露追蹤</strong>
+                <span>會微幅追蹤敵人，適合對付移動目標。</span>
+              </div>
+              <div class="helpItem">
+                <span class="helpIcon helpSpread"></span>
+                <strong>紫光散射</strong>
+                <span>一次射出多方向彈幕，適合清小怪。</span>
+              </div>
+              <div class="helpItem">
+                <span class="helpIcon helpShield"></span>
+                <strong>風之護盾</strong>
+                <span>短時間抵擋傷害，危險時保命。</span>
+              </div>
+              <div class="helpItem">
+                <span class="helpIcon helpSwarm"></span>
+                <strong>紫蝶群舞</strong>
+                <span>能量集滿後施放，造成大範圍攻擊。</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="knowledgePanel" class="overlay">
+        <div class="panel knowledge">
+          <p id="knowledgeStage" class="eyebrow"></p>
+          <h2 id="knowledgeTitle"></h2>
+          <p id="knowledgeText"></p>
+          <button id="continueButton" type="button">繼續遷徙</button>
+        </div>
+      </section>
+
+      <div id="touchControls" aria-hidden="true">
+        <div id="joystick" class="joystick">
+          <div id="stick" class="stick"></div>
+        </div>
+        <div class="touchButtons">
+          <button id="touchSpecial" type="button">蝶舞</button>
+          <button id="touchWeapon" type="button">換武器</button>
+          <button id="touchFire" type="button">射擊</button>
+        </div>
+      </div>
+    </main>
+
+    <script src="game.js"></script>
+  </body>
+</html>
