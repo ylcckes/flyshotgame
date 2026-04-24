@@ -17,8 +17,21 @@ const MAX_HEALTH = 5;
 
 function loadImage(src) {
   const img = new Image();
+  img.decoding = "async";
+  img.retryCount = 0;
+  img.onerror = () => {
+    if (img.retryCount >= 3) return;
+    img.retryCount += 1;
+    setTimeout(() => {
+      img.src = `${src}?retry=${img.retryCount}&t=${Date.now()}`;
+    }, 250 * img.retryCount);
+  };
   img.src = src;
   return img;
+}
+
+function imageReady(img) {
+  return Boolean(img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0);
 }
 
 const sprite = {
@@ -697,7 +710,7 @@ function draw() {
 
 function drawBackground() {
   const level = levels[game.levelIndex] || levels[0];
-  if (assets.bg.complete) {
+  if (imageReady(assets.bg)) {
     drawBackgroundLayer(level.bg, 1);
     if (!game.boss && !game.bossDone && game.levelIndex < levels.length - 1) {
       const progress = clamp(game.distance / level.length, 0, 1);
@@ -720,6 +733,7 @@ function drawBackground() {
 }
 
 function drawBackgroundLayer(bgIndex, alpha) {
+  if (!imageReady(assets.bg)) return;
   const sw = 724;
   const sh = 724;
   const crop = 10;
@@ -738,6 +752,7 @@ function drawBackgroundLayer(bgIndex, alpha) {
 }
 
 function drawBackgroundTile(sx, sy, sw, sh, dx, dy, dw, dh, flipX) {
+  if (!imageReady(assets.bg)) return;
   if (!flipX) {
     ctx.drawImage(assets.bg, sx, sy, sw, sh, dx, dy, dw, dh);
     return;
@@ -943,7 +958,7 @@ function roundedRect(x, y, w, h, r) {
 }
 
 function drawSprite(img, crop, dx, dy, dw, dh, flipX = false) {
-  if (!img.complete) return;
+  if (!imageReady(img)) return;
   if (!flipX) {
     ctx.drawImage(img, crop.x, crop.y, crop.w, crop.h, dx, dy, dw, dh);
     return;
