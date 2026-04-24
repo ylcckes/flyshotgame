@@ -165,6 +165,7 @@ let joystickActive = false;
 let touchFireHeld = false;
 let state = "menu";
 let lastTime = 0;
+let lastTouchEnd = 0;
 let game = createGame();
 
 function createGame(startLevel = 0) {
@@ -911,25 +912,26 @@ function drawParticles() {
 function drawHud() {
   const level = levels[game.levelIndex] || levels[0];
   ctx.save();
-  drawPanel(16, 16, 610, 104);
+  drawPanel(16, 16, 360, 108);
+  drawPanel(396, 16, 430, 108);
   drawPanel(W - 374, 16, 358, 116);
 
   ctx.fillStyle = "#fffaf7";
   ctx.font = "900 17px Microsoft JhengHei, sans-serif";
   ctx.fillText("生命", 34, 45);
-  drawHealthSlots(90, 24);
+  drawHealthSlots(94, 25);
   ctx.fillText("能量", 34, 88);
-  drawSprite(assets.icons, icon.swarm, 84, 68, 34, 30);
-  drawBar(126, 76, 210, 16, game.player.ultimate / 100, "#c084fc", "#2e1a47");
-  drawChargeCounter(348, 66);
+  drawSprite(assets.icons, icon.swarm, 86, 69, 32, 28);
+  drawBar(126, 78, 150, 15, game.player.ultimate / 100, "#c084fc", "#2e1a47");
+  drawChargeCounter(305, 64);
 
   ctx.fillStyle = "#fffaf7";
   ctx.font = "700 18px Microsoft JhengHei, sans-serif";
-  ctx.fillText(level.name, 360, 42);
+  ctx.fillText(level.name, 420, 42);
   ctx.fillStyle = "#9de8ff";
-  ctx.fillText(level.badge, 360, 72);
+  ctx.fillText(level.badge, 420, 72);
   const progress = game.boss ? 1 : clamp(game.distance / level.length, 0, 1);
-  drawBar(360, 84, 220, 10, progress, "#fde047", "#463d20");
+  drawBar(420, 88, 360, 10, progress, "#fde047", "#463d20");
 
   drawSprite(assets.icons, icon.star, W - 354, 28, 36, 36);
   drawSprite(assets.icons, icon.crystal, W - 354, 70, 36, 36);
@@ -962,7 +964,7 @@ function drawHealthSlots(x, y) {
   for (let i = 0; i < game.player.maxHp; i++) {
     ctx.save();
     if (i >= game.player.hp) ctx.globalAlpha = 0.26;
-    drawSprite(assets.icons, icon.heart, x + i * 44, y, 38, 34);
+    drawSprite(assets.icons, icon.heart, x + i * 40, y, 34, 31);
     ctx.restore();
   }
 }
@@ -1227,6 +1229,24 @@ window.addEventListener("keyup", (event) => {
   keys.delete(event.key.toLowerCase());
   if (event.key === " ") input.fire = false;
 });
+
+document.addEventListener(
+  "touchend",
+  (event) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 320) event.preventDefault();
+    lastTouchEnd = now;
+  },
+  { passive: false },
+);
+
+document.addEventListener(
+  "gesturestart",
+  (event) => {
+    event.preventDefault();
+  },
+  { passive: false },
+);
 
 setupTouchControls();
 updateLeaderboard();
