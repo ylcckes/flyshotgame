@@ -51,14 +51,14 @@ const sprite = {
 };
 
 const icon = {
-  heart: { x: 55, y: 70, w: 260, h: 225 },
-  star: { x: 390, y: 72, w: 250, h: 220 },
-  crystal: { x: 718, y: 65, w: 255, h: 230 },
-  pollen: { x: 1058, y: 92, w: 250, h: 175 },
-  nectar: { x: 55, y: 405, w: 270, h: 210 },
-  spread: { x: 405, y: 410, w: 250, h: 200 },
-  shield: { x: 730, y: 390, w: 270, h: 235 },
-  swarm: { x: 1070, y: 390, w: 280, h: 235 },
+  heart: { x: 0, y: 0, w: 384, h: 341 },
+  star: { x: 384, y: 0, w: 384, h: 341 },
+  crystal: { x: 768, y: 0, w: 384, h: 341 },
+  pollen: { x: 1152, y: 0, w: 384, h: 341 },
+  nectar: { x: 0, y: 341, w: 384, h: 342 },
+  spread: { x: 384, y: 341, w: 384, h: 342 },
+  shield: { x: 768, y: 341, w: 384, h: 342 },
+  swarm: { x: 1152, y: 341, w: 384, h: 342 },
 };
 
 const levels = [
@@ -560,6 +560,8 @@ function updateBoss(dt) {
   }
   if (b.hp <= 0) {
     game.score += 80 + game.levelIndex * 40;
+    createExplosion(b.x, b.y, 2.2);
+    playExplosionSfx(1.1);
     game.boss = null;
     game.bossDone = true;
     burst(W - 220, H * 0.5, "#fde68a", 80);
@@ -583,6 +585,13 @@ function updateParticles(dt) {
   for (const p of game.particles) {
     p.x += p.vx * dt;
     p.y += p.vy * dt;
+    if (p.kind === "smoke") {
+      p.vx *= 0.986;
+      p.vy -= 8 * dt;
+      p.r += 11 * dt;
+    } else if (p.kind === "ember") {
+      p.vy += 160 * dt;
+    }
     p.life -= dt;
     p.alpha = Math.max(0, p.life / p.maxLife);
   }
@@ -641,6 +650,8 @@ function defeatEnemy(e) {
   const info = enemyInfo[e.kind];
   game.score += info.score;
   addUltimateEnergy(4);
+  createExplosion(e.x, e.y, 0.78);
+  playExplosionSfx(0.55);
   if (Math.random() < 0.65) game.pickups.push({ type: "pollen", x: e.x, y: e.y, r: 18 });
   if (Math.random() < 0.2) game.pickups.push({ type: "heal", x: e.x + 18, y: e.y - 14, r: 20 });
   if (Math.random() < 0.12) game.pickups.push({ type: "crystal", x: e.x + 20, y: e.y - 16, r: 20 });
@@ -694,6 +705,57 @@ function burst(x, y, color, count) {
       life: rand(0.35, 0.8),
       maxLife: 0.8,
       alpha: 1,
+      kind: "spark",
+    });
+  }
+}
+
+function createExplosion(x, y, scale = 1) {
+  game.particles.push({
+    x,
+    y,
+    vx: 0,
+    vy: 0,
+    r: 8 * scale,
+    maxR: 74 * scale,
+    color: "rgba(255, 245, 190, 0.9)",
+    life: 0.38,
+    maxLife: 0.38,
+    alpha: 1,
+    kind: "ring",
+  });
+
+  for (let i = 0; i < 22 * scale; i++) {
+    const a = rand(0, Math.PI * 2);
+    const s = rand(120, 390) * scale;
+    game.particles.push({
+      x,
+      y,
+      vx: Math.cos(a) * s,
+      vy: Math.sin(a) * s,
+      r: rand(3.5, 8) * scale,
+      color: i % 3 === 0 ? "#fff7ad" : i % 3 === 1 ? "#ff9f1c" : "#fb3b3b",
+      life: rand(0.38, 0.75),
+      maxLife: 0.75,
+      alpha: 1,
+      kind: "ember",
+    });
+  }
+
+  for (let i = 0; i < 9 * scale; i++) {
+    const a = rand(0, Math.PI * 2);
+    const s = rand(35, 95) * scale;
+    game.particles.push({
+      x: x + Math.cos(a) * rand(4, 18) * scale,
+      y: y + Math.sin(a) * rand(4, 18) * scale,
+      vx: Math.cos(a) * s,
+      vy: Math.sin(a) * s - 25 * scale,
+      r: rand(10, 22) * scale,
+      color: "rgba(68, 66, 78, 0.52)",
+      life: rand(0.7, 1.15),
+      maxLife: 1.15,
+      alpha: 1,
+      kind: "smoke",
     });
   }
 }
@@ -713,15 +775,15 @@ function draw() {
 function drawBackground() {
   const level = levels[game.levelIndex] || levels[0];
   if (imageReady(assets.bg)) {
-    drawBackgroundLayer(level.bg, 1);
+    drawBackgroundLayer(level.bg, 0.8);
     if (!game.boss && !game.bossDone && game.levelIndex < levels.length - 1) {
       const progress = clamp(game.distance / level.length, 0, 1);
       const blend = clamp((progress - 0.78) / 0.22, 0, 1);
-      if (blend > 0) drawBackgroundLayer(level.bg + 1, blend * 0.9);
+      if (blend > 0) drawBackgroundLayer(level.bg + 1, blend * 0.72);
     }
     softenBackgroundEdges();
   } else {
-    ctx.fillStyle = "#90d7f5";
+    ctx.fillStyle = "#c8f1fb";
     ctx.fillRect(0, 0, W, H);
   }
 
@@ -768,11 +830,13 @@ function drawBackgroundTile(sx, sy, sw, sh, dx, dy, dw, dh, flipX) {
 
 function softenBackgroundEdges() {
   const fade = ctx.createLinearGradient(0, 0, W, 0);
-  fade.addColorStop(0, "rgba(64, 39, 96, 0.16)");
-  fade.addColorStop(0.08, "rgba(64, 39, 96, 0)");
-  fade.addColorStop(0.92, "rgba(64, 39, 96, 0)");
-  fade.addColorStop(1, "rgba(64, 39, 96, 0.16)");
+  fade.addColorStop(0, "rgba(255, 255, 255, 0.16)");
+  fade.addColorStop(0.08, "rgba(255, 255, 255, 0.04)");
+  fade.addColorStop(0.92, "rgba(255, 255, 255, 0.04)");
+  fade.addColorStop(1, "rgba(255, 255, 255, 0.16)");
   ctx.fillStyle = fade;
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
   ctx.fillRect(0, 0, W, H);
 }
 
@@ -816,29 +880,133 @@ function drawBullets() {
   for (const b of game.bullets) {
     ctx.save();
     if (b.kind === "ultimate") {
-      const pulse = 1 + Math.sin(performance.now() * 0.012) * 0.08;
-      ctx.globalAlpha = 0.45;
-      ctx.fillStyle = b.color;
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.r * pulse, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = 0.95;
-      ctx.strokeStyle = "#fff7ad";
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.r * 0.62, 0, Math.PI * 2);
-      ctx.stroke();
+      drawUltimateSwarm(b);
     } else {
       drawSparkBullet(b);
     }
     ctx.restore();
   }
   for (const b of game.enemyBullets) {
-    ctx.fillStyle = b.color;
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-    ctx.fill();
+    drawEnemyBullet(b);
   }
+}
+
+function drawEnemyBullet(b) {
+  const angle = Math.atan2(b.vy, b.vx);
+  const pulse = 1 + Math.sin(performance.now() * 0.02 + b.x * 0.04) * 0.12;
+  const glow = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r * 3.1);
+  glow.addColorStop(0, "rgba(255, 255, 255, 0.96)");
+  glow.addColorStop(0.22, b.color);
+  glow.addColorStop(0.58, "rgba(255, 77, 109, 0.42)");
+  glow.addColorStop(1, "rgba(255, 77, 109, 0)");
+
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(b.x, b.y, b.r * 3.1 * pulse, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.globalCompositeOperation = "source-over";
+  ctx.strokeStyle = "rgba(42, 12, 30, 0.88)";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(b.x, b.y, b.r * 1.15, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.shadowColor = b.color;
+  ctx.shadowBlur = 18;
+  ctx.fillStyle = b.color;
+  ctx.beginPath();
+  ctx.arc(b.x, b.y, b.r * 0.95, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#fffdf2";
+  ctx.beginPath();
+  ctx.arc(b.x - Math.cos(angle) * b.r * 0.22, b.y - Math.sin(angle) * b.r * 0.22, b.r * 0.38, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.86)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(b.x - Math.cos(angle) * b.r * 2.2, b.y - Math.sin(angle) * b.r * 2.2);
+  ctx.lineTo(b.x + Math.cos(angle) * b.r * 1.2, b.y + Math.sin(angle) * b.r * 1.2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawUltimateSwarm(b) {
+  const time = performance.now() * 0.004;
+  const pulse = 1 + Math.sin(time * 4) * 0.06;
+  const aura = ctx.createRadialGradient(b.x, b.y, b.r * 0.08, b.x, b.y, b.r * 1.35);
+  aura.addColorStop(0, "rgba(255, 255, 255, 0.44)");
+  aura.addColorStop(0.38, "rgba(196, 132, 252, 0.26)");
+  aura.addColorStop(1, "rgba(196, 132, 252, 0)");
+
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.fillStyle = aura;
+  ctx.beginPath();
+  ctx.arc(b.x, b.y, b.r * 1.35 * pulse, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "rgba(255, 247, 173, 0.42)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(b.x, b.y, b.r * 0.72, 0, Math.PI * 2);
+  ctx.stroke();
+
+  for (let i = 0; i < 22; i++) {
+    const ring = i % 4;
+    const angle = time * (1.1 + ring * 0.18) + i * 2.399;
+    const radius = 20 + ring * 20 + Math.sin(time * 3 + i) * 8;
+    const flutter = Math.sin(time * 8 + i) * 5;
+    const x = b.x + Math.cos(angle) * radius - (i % 5) * 4;
+    const y = b.y + Math.sin(angle) * radius * 0.68 + flutter;
+    const size = 5.5 + (i % 5) * 1.6;
+    drawMiniPurpleButterfly(x, y, size, angle + Math.PI / 2, 0.62 + (i % 3) * 0.1);
+  }
+
+  for (let i = 0; i < 8; i++) {
+    const trailX = b.x - 40 - i * 16 + Math.sin(time * 6 + i) * 8;
+    const trailY = b.y + Math.sin(time * 5 + i * 1.8) * (18 + i * 2);
+    drawMiniPurpleButterfly(trailX, trailY, 4.5 + i * 0.4, -0.15, 0.45);
+  }
+  ctx.restore();
+}
+
+function drawMiniPurpleButterfly(x, y, size, angle, alpha) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.globalAlpha = alpha;
+  ctx.shadowColor = "rgba(167, 139, 250, 0.95)";
+  ctx.shadowBlur = size * 1.4;
+
+  const flap = 1 + Math.sin(performance.now() * 0.018 + x * 0.05) * 0.18;
+  ctx.fillStyle = "#7c3aed";
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.5, -size * 0.25, size * 0.56, size * 0.9 * flap, -0.55, 0, Math.PI * 2);
+  ctx.ellipse(size * 0.5, -size * 0.25, size * 0.56, size * 0.9 * flap, 0.55, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#c4b5fd";
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.45, -size * 0.28, size * 0.24, size * 0.42, -0.55, 0, Math.PI * 2);
+  ctx.ellipse(size * 0.45, -size * 0.28, size * 0.24, size * 0.42, 0.55, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#2e1065";
+  ctx.beginPath();
+  ctx.ellipse(0, 0, size * 0.16, size * 0.82, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  ctx.beginPath();
+  ctx.arc(-size * 0.48, -size * 0.68, size * 0.11, 0, Math.PI * 2);
+  ctx.arc(size * 0.48, -size * 0.68, size * 0.11, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 }
 
 function drawSparkBullet(b) {
@@ -901,10 +1069,26 @@ function drawPickups() {
 function drawParticles() {
   for (const p of game.particles) {
     ctx.globalAlpha = p.alpha;
-    ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.fill();
+    if (p.kind === "ring") {
+      const pct = 1 - p.life / p.maxLife;
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = Math.max(2, 8 * (1 - pct));
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r + (p.maxR - p.r) * pct, 0, Math.PI * 2);
+      ctx.stroke();
+    } else {
+      ctx.save();
+      if (p.kind === "ember") {
+        ctx.globalCompositeOperation = "lighter";
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 14;
+      }
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
   }
   ctx.globalAlpha = 1;
 }
@@ -1198,6 +1382,40 @@ function playHat(time, volume) {
   source.connect(filter).connect(gain).connect(music.master);
   source.start(time);
   source.stop(time + 0.065);
+}
+
+function playExplosionSfx(volume = 0.7) {
+  if (!music.enabled) return;
+  ensureAudio();
+  if (!music.ctx || !music.master || !music.noiseBuffer) return;
+  const audioCtx = music.ctx;
+  const time = audioCtx.currentTime + 0.01;
+
+  const noise = audioCtx.createBufferSource();
+  const filter = audioCtx.createBiquadFilter();
+  const gain = audioCtx.createGain();
+  noise.buffer = music.noiseBuffer;
+  noise.playbackRate.setValueAtTime(0.55, time);
+  filter.type = "lowpass";
+  filter.frequency.setValueAtTime(1800, time);
+  filter.frequency.exponentialRampToValueAtTime(220, time + 0.28);
+  gain.gain.setValueAtTime(0.0001, time);
+  gain.gain.exponentialRampToValueAtTime(0.18 * volume, time + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.34);
+  noise.connect(filter).connect(gain).connect(music.master);
+  noise.start(time);
+  noise.stop(time + 0.36);
+
+  const boom = audioCtx.createOscillator();
+  const boomGain = audioCtx.createGain();
+  boom.type = "sine";
+  boom.frequency.setValueAtTime(115, time);
+  boom.frequency.exponentialRampToValueAtTime(38, time + 0.22);
+  boomGain.gain.setValueAtTime(0.11 * volume, time);
+  boomGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.28);
+  boom.connect(boomGain).connect(music.master);
+  boom.start(time);
+  boom.stop(time + 0.3);
 }
 
 document.getElementById("startButton").addEventListener("click", startGame);
